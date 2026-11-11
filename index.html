@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>945ms Performance Tax Simulation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 800px; margin: auto; background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1, h2 { color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 25px; }
+        h1 { font-size: 2em; }
+        h2 { font-size: 1.5em; }
+        p { margin-bottom: 15px; }
+        .result { margin-top: 20px; padding: 15px; background: #e6f7ff; border-left: 5px solid #2196f3; border-radius: 4px; font-size: 1.1em; }
+        .error { color: #e74c3c; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin-top: 15px; background-color: #2196f3; color: white; border: none; border-radius: 5px; transition: background-color 0.3s ease; }
+        button:hover { background-color: #1976d2; }
+        .task-list { margin-bottom: 20px; padding-left: 20px; }
+        .task-item { margin-bottom: 5px; color: #555; }
+        .highlight-red { color: #e74c3c; font-weight: bold; }
+        .highlight-green { color: #28a745; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>945ms Performance Tax Simulation</h1>
+        <p>This example demonstrates how multiple small delays can accumulate, creating a significant "performance tax" for users. We'll simulate loading several components sequentially and then in parallel to see the difference in total perceived load time.</p>
+
+        <h2>Scenario 1: Sequential Loading (High Tax)</h2>
+        <p>Imagine a page loading components one after another. Each component has a small, inherent delay, adding to the overall wait time.</p>
+        <div class="task-list">
+            <div class="task-item">Task A: 200ms</div>
+            <div class="task-item">Task B: 150ms</div>
+            <div class="task-item">Task C: 300ms</div>
+            <div class="task-item">Task D: 250ms</div>
+        </div>
+        <button id="runSequential">Run Sequential Simulation</button>
+        <div id="sequentialResult" class="result"></div>
+
+        <h2>Scenario 2: Parallel Loading (Reduced Tax)</h2>
+        <p>Now, imagine some components can load simultaneously, significantly reducing the overall waiting time by overlapping their delays.</p>
+        <div class="task-list">
+            <div class="task-item">Task A: 200ms (parallel)</div>
+            <div class="task-item">Task B: 150ms (parallel)</div>
+            <div class="task-item">Task C: 300ms (parallel)</div>
+            <div class="task-item">Task D: 250ms (parallel)</div>
+        </div>
+        <button id="runParallel">Run Parallel Simulation</button>
+        <div id="parallelResult" class="result"></div>
+    </div>
+
+    <script>
+        // Helper function to simulate an asynchronous task with a delay
+        function simulateTask(name, delay) {
+            return new Promise(resolve => {
+                console.log(`[${name}] Starting... (delay: ${delay}ms)`);
+                setTimeout(() => {
+                    console.log(`[${name}] Finished.`);
+                    resolve({ name, delay });
+                }, delay);
+            });
+        }
+
+        // --- Scenario 1: Sequential Loading ---
+        document.getElementById('runSequential').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('sequentialResult');
+            resultDiv.innerHTML = 'Loading... Check console for task progress.';
+            const startTime = performance.now();
+
+            try {
+                // Simulate tasks loading one after another.
+                // This directly illustrates the "945ms Tax" concept:
+                // multiple small, individual delays adding up to a significant total.
+                await simulateTask('Component A', 200); // Small delay 1
+                await simulateTask('Component B', 150); // Small delay 2
+                await simulateTask('Component C', 300); // Small delay 3
+                await simulateTask('Component D', 250); // Small delay 4
+
+                const endTime = performance.now();
+                const totalTime = (endTime - startTime).toFixed(2);
+                const timeClass = totalTime > 900 ? 'highlight-red' : 'highlight-green';
+                resultDiv.innerHTML = `<strong>Sequential Loading Complete!</strong><br>Total time: <span class="${timeClass}">${totalTime}ms</span>.`;
+                if (totalTime > 900) {
+                    resultDiv.innerHTML += '<br><em>This total time approaches or exceeds the "945ms Tax" threshold, demonstrating the impact of accumulated delays.</em>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+            }
+        });
+
+        // --- Scenario 2: Parallel Loading ---
+        document.getElementById('runParallel').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('parallelResult');
+            resultDiv.innerHTML = 'Loading... Check console for task progress.';
+            const startTime = performance.now();
+
+            try {
+                // Simulate tasks loading simultaneously.
+                // This demonstrates how optimization (parallelization) can significantly reduce the "tax".
+                await Promise.all([
+                    simulateTask('Component A (P)', 200),
+                    simulateTask('Component B (P)', 150),
+                    simulateTask('Component C (P)', 300),
+                    simulateTask('Component D (P)', 250)
+                ]);
+
+                const endTime = performance.now();
+                const totalTime = (endTime - startTime).toFixed(2);
+                const timeClass = totalTime > 900 ? 'highlight-red' : 'highlight-green';
+                resultDiv.innerHTML = `<strong>Parallel Loading Complete!</strong><br>Total time: <span class="${timeClass}">${totalTime}ms</span>.`;
+                if (totalTime < 350) { // Max of 200, 150, 300, 250 is 300ms. Add a small buffer for execution overhead.
+                    resultDiv.innerHTML += '<br><em>By loading components in parallel, the perceived "performance tax" is significantly reduced.</em>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+            }
+        });
+    </script>
+</body>
+</html>
